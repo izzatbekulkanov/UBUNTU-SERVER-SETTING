@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{% csrf_token %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Loglari</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-black text-green-500 font-mono overflow-hidden">
+    <!-- Matrix Background -->
+    <div id="matrix" class="fixed inset-0 z-[-1]"></div>
+
+    <!-- Header -->
+    <div class="text-center mt-10">
+        <h1 class="text-3xl font-bold">📁 Server Loglari</h1>
+        <button onclick="window.location.href='/'" class="mt-5 px-6 py-3 bg-blue-500 text-black rounded hover:bg-blue-600 transition">
+            🏠 Uyga Qaytish
+        </button>
+    </div>
+
+    <!-- Log Container -->
+    <div class="container mx-auto mt-8 p-4 bg-gray-800 rounded-lg shadow-lg">
+        <div id="log-list" class="overflow-y-auto h-96"></div>
+    </div>
+
+    <script>
+        // Matrix background animation
+        const matrix = document.getElementById('matrix');
+        for (let i = 0; i < 150; i++) {
+            const span = document.createElement('span');
+            span.textContent = Math.random() > 0.5 ? '0' : '1';
+            span.className = 'absolute text-green-500 font-mono';
+            span.style.left = `${Math.random() * 100}vw`;
+            span.style.animation = `fall ${Math.random() * 3 + 2}s linear infinite`;
+            span.style.opacity = Math.random();
+            matrix.appendChild(span);
+        }
+
+        // Keyframes for the matrix animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                0% { transform: translateY(-100%); opacity: 0; }
+                50% { opacity: 1; }
+                100% { transform: translateY(100vh); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Fetch logs and update list
+        function fetchLogs() {
+            fetch('/logs/get-logs/')
+                .then(response => response.json())
+                .then(data => {
+                    const logList = document.getElementById('log-list');
+                    logList.innerHTML = '';
+                    data.logs.forEach(log => {
+                        const div = document.createElement('div');
+                        div.textContent = `[${log.timestamp}] [${log.log_type.toUpperCase()}] ${log.message}`;
+                        div.className = `p-2 rounded ${
+                            log.log_type === 'error' ? 'bg-red-500 text-black' : 'bg-green-500 text-black'
+                        } mb-2`;
+                        logList.appendChild(div);
+                    });
+                });
+        }
+
+        // Update logs every 2 seconds
+        setInterval(fetchLogs, 2000);
+
+        // Start log monitoring
+        fetch('/logs/start-log-monitor/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+    </script>
+</body>
+</html>

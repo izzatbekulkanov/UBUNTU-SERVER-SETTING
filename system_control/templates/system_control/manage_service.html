@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Xizmat Boshqaruvi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+        {% comment %} <link href="{% static 'tailwind/tailwind.min.css' %}" rel="stylesheet"> {% endcomment %}
+
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body class="bg-gray-900 text-white font-mono">
+    <div class="container mx-auto mt-10 space-y-10">
+        <!-- Header -->
+        <div class="text-center bg-green-700 p-5 rounded-lg shadow-lg relative">
+    <h1 class="text-3xl font-bold">📁 Server Xizmat Boshqaruvi</h1>
+    <button onclick="window.location.href='/'" class="absolute top-5 right-5 px-4 py-2 bg-gray-900 text-white rounded hover:bg-gray-800 transition">
+        🏠 Uyga Qaytish
+    </button>
+</div>
+
+<!-- Disk, Xotira va Xizmat Holati Ma'lumotlari -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+     <!-- Disk Diagrammasi -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-bold text-center">📊 Disk Foydalanilishi</h2>
+        <canvas id="diskChart" width="100" height="100" class="mt-4"></canvas>
+        <p class="text-center mt-2">
+            <strong>Umumiy:</strong> {{ disk.total }} GB<br>
+            <strong>Ishlatilgan:</strong> {{ disk.used }} GB<br>
+            <strong>Bo‘sh:</strong> {{ disk.free }} GB
+        </p>
+    </div>
+
+    <!-- Xotira Diagrammasi -->
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-bold text-center">📊 Xotira Foydalanilishi</h2>
+        <canvas id="memoryChart" width="100" height="100" class="mt-4"></canvas>
+        <p class="text-center mt-2">
+            <strong>Umumiy:</strong> {{ memory.total }}<br>
+            <strong>Ishlatilgan:</strong> {{ memory.used }}<br>
+            <strong>Bo‘sh:</strong> {{ memory.free }}
+        </p>
+    </div>
+
+    <!-- Xizmat Holati -->
+   <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+        <h2 class="text-xl font-bold">🛠️ Xizmat Holati</h2>
+        <p class="mt-4"><strong>Xizmat:</strong> inihub.service</p>
+        <div id="service-status-display" class="flex justify-center items-center mt-4">
+            <img id="status-gif" src="https://i.gifer.com/7efs.gif" alt="Holat" class="w-32 h-32">
+        </div>
+        <p id="service-status" class="mt-4 text-lg font-semibold">
+            Holati: <span class="text-yellow-500">Tekshirilmoqda...</span>
+        </p>
+        <button onclick="checkServiceStatus()" class="mt-4 px-4 py-2 bg-blue-500 text-black rounded hover:bg-blue-600 transition">
+            Holatni Yangilash
+        </button>
+    </div>
+
+</div>
+
+
+   <!-- Xizmatlarni Boshqarish -->
+<div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-xl font-bold text-center mb-5">Xizmatlarni Boshqarish</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Ishga Tushirish -->
+        <div class="text-center">
+            <button onclick="manageService('start')" class="px-6 py-3 bg-green-500 text-black rounded-lg hover:bg-green-600 transition w-full">
+                Ishga Tushirish
+            </button>
+            <p class="text-sm mt-2 text-gray-400">Terminalda: 
+                <code class="bg-gray-700 px-2 py-1 rounded">sudo systemctl start inihub.service</code>
+            </p>
+        </div>
+        
+        <!-- Qayta Yuklash -->
+        <div class="text-center">
+            <button onclick="manageService('restart')" class="px-6 py-3 bg-blue-500 text-black rounded-lg hover:bg-blue-600 transition w-full">
+                Qayta Yuklash
+            </button>
+            <p class="text-sm mt-2 text-gray-400">Terminalda: 
+                <code class="bg-gray-700 px-2 py-1 rounded">sudo systemctl restart inihub.service</code>
+            </p>
+        </div>
+
+        <!-- To'xtatish -->
+        <div class="text-center">
+            <button onclick="manageService('stop')" class="px-6 py-3 bg-red-500 text-black rounded-lg hover:bg-red-600 transition w-full">
+                To‘xtatish
+            </button>
+            <p class="text-sm mt-2 text-gray-400">Terminalda: 
+                <code class="bg-gray-700 px-2 py-1 rounded">sudo systemctl stop inihub.service</code>
+            </p>
+        </div>
+
+        <!-- Faollashtirish -->
+        <div class="text-center">
+            <button onclick="manageService('enable')" class="px-6 py-3 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition w-full">
+                Faollashtirish
+            </button>
+            <p class="text-sm mt-2 text-gray-400">Terminalda: 
+                <code class="bg-gray-700 px-2 py-1 rounded">sudo systemctl enable inihub.service</code>
+            </p>
+        </div>
+    </div>
+</div>
+
+
+<!-- Portlar Ma'lumotlari -->
+<div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <h2 class="text-xl font-bold text-center mb-5">🔌 Portlar Ma'lumotlari</h2>
+    <ul class="space-y-4">
+        <!-- Ochiq Portlar -->
+        <li>
+            <h3 class="text-lg font-semibold text-red-500">Ochiq Portlar:</h3>
+            <ul class="space-y-2">
+                {% for port in ports.open %}
+                <li class="bg-gray-700 p-4 rounded">
+                    <p><strong>Port:</strong> {{ port.info }}</p>
+                    <p><strong>⚠️ Xavf:</strong> {{ port.risk }}</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+        
+        <!-- Yopiq Portlar -->
+        <li>
+            <h3 class="text-lg font-semibold text-green-500">Yopiq Portlar:</h3>
+            <ul class="space-y-2">
+                {% for port in ports.closed %}
+                <li class="bg-gray-700 p-4 rounded text-green-400">
+                    {{ port }}
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+</div>
+
+
+        <!-- Loglar -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-xl font-bold text-center mb-5">📜 Loglar</h2>
+            <ul id="log-output" class="space-y-3">
+                {% for log in logs %}
+                <li class="bg-gray-700 p-4 rounded shadow flex justify-between items-center">
+                    <span class="text-sm"><strong>[{{ log.timestamp }}]</strong> {{ log.service_name }} - {{ log.action }}: {{ log.message }}</span>
+                    <button class="px-3 py-1 bg-red-500 text-black rounded hover:bg-red-600 transition" onclick="deleteLog({{ log.id }})">O'chirish</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function manageService(action) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch('/system_control/manage/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ action: action, service_name: 'inihub.service' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(`[${action.toUpperCase()}] Natija: ${data.message}`);
+            })
+            .catch(error => {
+                alert(`Xatolik: ${error.message}`);
+            });
+        }
+
+        function deleteLog(logId) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch(`/system_control/delete-log/${logId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                location.reload();
+            })
+            .catch(error => alert(`Xatolik: ${error.message}`));
+        }
+    </script>
+
+ <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Disk Diagrammasi
+        const diskCtx = document.getElementById('diskChart').getContext('2d');
+        const diskData = {
+            labels: ['Ishlatilgan', 'Bo‘sh'],
+            datasets: [{
+                data: [{{ disk.used }}, {{ disk.free }}],
+                backgroundColor: ['#ff6384', '#36a2eb'],
+                hoverBackgroundColor: ['#ff6384', '#36a2eb']
+            }]
+        };
+        const diskChart = new Chart(diskCtx, {
+            type: 'doughnut',
+            data: diskData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                const value = diskData.datasets[0].data[tooltipItem.dataIndex];
+                                return `${tooltipItem.label}: ${value} GB`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Xotira Diagrammasi
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        const memoryData = {
+            labels: ['Ishlatilgan', 'Bo‘sh'],
+            datasets: [{
+                data: [parseInt('{{ memory.used }}'.replace('G', '')), parseInt('{{ memory.free }}'.replace('G', ''))],
+                backgroundColor: ['#4caf50', '#fdd835'],
+                hoverBackgroundColor: ['#4caf50', '#fdd835']
+            }]
+        };
+        const memoryChart = new Chart(memoryCtx, {
+            type: 'pie',
+            data: memoryData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#ffffff'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                const value = memoryData.datasets[0].data[tooltipItem.dataIndex];
+                                return `${tooltipItem.label}: ${value} GB`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+  <script>
+    function checkServiceStatus() {
+        fetch('/system_control/status/?service_name=inihub.service')
+            .then(response => response.json())
+            .then(data => {
+                const statusElement = document.getElementById('service-status');
+                const statusGif = document.getElementById('status-gif');
+
+                if (data.active) {
+                    // Faol holat
+                    statusGif.src = "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif";
+                    statusElement.innerHTML = `Holati: <span class="text-green-500">Faol</span>`;
+                } else {
+                    // Nofaol holat
+                    statusGif.src = "https://media.giphy.com/media/jt7bAtEijhurm/giphy.gif";
+                    statusElement.innerHTML = `Holati: <span class="text-red-500">Faol emas</span>`;
+                }
+            })
+            .catch(error => {
+                const statusElement = document.getElementById('service-status');
+                const statusGif = document.getElementById('status-gif');
+
+                // Xatolik yuz berganda holat
+                statusGif.src = "https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif";
+                statusElement.innerHTML = `Holati: <span class="text-red-500">Xatolik yuz berdi</span>`;
+                console.error('Xatolik:', error);
+            });
+    }
+
+    // Sahifa yuklanganda avtomatik holatni tekshirish
+    checkServiceStatus();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Command Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes scanline {
+            0% { opacity: 0.8; }
+            50% { opacity: 0.2; }
+            100% { opacity: 0.8; }
+        }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+    </style>
+</head>
+<body class="bg-black text-green-400 font-mono h-screen overflow-hidden relative">
+    <!-- Scanline Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-green-400/10 to-transparent pointer-events-none animate-scanline"></div>
+
+    <!-- Login Container -->
+    <div class="relative z-10 flex flex-col items-center justify-center min-h-screen">
+        <!-- Main Box -->
+        <div class="w-full max-w-lg bg-gray-900 border-2 border-green-500 rounded-lg shadow-2xl p-8 relative">
+            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black rounded-full w-16 h-16 border-4 border-green-400 flex items-center justify-center">
+                <div class="w-6 h-6 bg-green-500 rounded-full animate-ping"></div>
+            </div>
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold text-green-400">🛡️ Secure Command Login</h1>
+                <p class="text-sm text-gray-400">Access restricted to server admins only</p>
+            </div>
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div>
+                    <label for="username" class="block text-sm font-medium text-green-400">Admin ID</label>
+                    <input type="text" id="username" name="username" class="w-full bg-gray-800 text-green-400 border border-green-500 rounded-lg p-2 mt-1 focus:outline-none focus:ring focus:ring-green-500 placeholder-gray-500" placeholder="Enter your Admin ID">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-green-400">Access Key</label>
+                    <input type="password" id="password" name="password" class="w-full bg-gray-800 text-green-400 border border-green-500 rounded-lg p-2 mt-1 focus:outline-none focus:ring focus:ring-green-500 placeholder-gray-500" placeholder="Enter your Access Key">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-black font-bold py-2 rounded-lg transition">
+                    Enter Command Interface
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Animated Command Line -->
+    <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-90 p-4 text-xs text-green-400">
+        <div class="relative overflow-hidden">
+            <span class="absolute w-full whitespace-nowrap overflow-hidden border-r-2 border-green-400 animate-typewriter">
+                > Initializing secure protocols...
+            </span>
+            <span class="absolute w-full mt-5 whitespace-nowrap overflow-hidden border-r-2 border-green-400 animate-typewriter">
+                > Verifying access level...
+            </span>
+            <span class="absolute w-full mt-10 whitespace-nowrap overflow-hidden border-r-2 border-green-400 animate-typewriter">
+                > Alert: All activity is logged and monitored.
+            </span>
+        </div>
+    </div>
+
+    <script>
+        // Create animated matrix effect
+        const generateMatrixEffect = () => {
+            const body = document.body;
+            for (let i = 0; i < 50; i++) {
+                const span = document.createElement('span');
+                span.textContent = Math.random() > 0.5 ? '0' : '1';
+                span.style.position = 'absolute';
+                span.style.left = `${Math.random() * 100}vw`;
+                span.style.top = `${Math.random() * 100}vh`;
+                span.style.color = '#0f0';
+                span.style.opacity = Math.random() * 0.8;
+                span.style.animation = `scanline ${Math.random() * 5 + 2}s linear infinite`;
+                body.appendChild(span);
+                setTimeout(() => body.removeChild(span), 6000);
+            }
+        };
+
+        generateMatrixEffect();
+        setInterval(generateMatrixEffect, 3000);
+    </script>
+</body>
+</html>
